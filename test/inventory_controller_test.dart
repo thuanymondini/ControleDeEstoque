@@ -4,7 +4,8 @@ import 'package:controle_estoque/models/stock_movement.dart';
 import 'package:controle_estoque/state/inventory_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Repositorio em memoria para testar as regras sem SharedPreferences.
+/// Repositorio em memoria (de um unico usuario) para testar as regras sem
+/// SharedPreferences.
 class FakeRepository extends InventoryRepository {
   FakeRepository(this._products);
 
@@ -12,25 +13,33 @@ class FakeRepository extends InventoryRepository {
   List<StockMovement> _movements = [];
 
   @override
-  Future<List<Product>> loadProducts() async => List.of(_products);
+  Future<List<Product>> loadProducts(
+    String owner, {
+    bool withSampleData = false,
+  }) async =>
+      List.of(_products);
 
   @override
-  Future<void> saveProducts(List<Product> products) async {
+  Future<void> saveProducts(String owner, List<Product> products) async {
     _products = List.of(products);
   }
 
   @override
-  Future<List<StockMovement>> loadMovements() async => List.of(_movements);
+  Future<List<StockMovement>> loadMovements(String owner) async =>
+      List.of(_movements);
 
   @override
-  Future<void> saveMovements(List<StockMovement> movements) async {
+  Future<void> saveMovements(
+    String owner,
+    List<StockMovement> movements,
+  ) async {
     _movements = List.of(movements);
   }
 }
 
 Future<InventoryController> buildController(List<Product> products) async {
   final controller = InventoryController(repository: FakeRepository(products));
-  await controller.load();
+  await controller.load('teste@estoque.com');
   return controller;
 }
 

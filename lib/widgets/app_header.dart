@@ -12,6 +12,7 @@ class AppHeader extends StatelessWidget {
     this.overline,
     this.subtitle,
     this.color = AppColors.primary,
+    this.trailing,
     this.bottom,
     this.bottomPadding = 16,
   });
@@ -20,6 +21,9 @@ class AppHeader extends StatelessWidget {
   final String? overline;
   final String? subtitle;
   final Color color;
+
+  /// Acao no canto superior direito (ex.: botao Sair).
+  final Widget? trailing;
 
   /// Conteudo extra dentro do cabecalho (ex.: campo de pesquisa).
   final Widget? bottom;
@@ -39,19 +43,32 @@ class AppHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (overline != null) ...[
-            Text(overline!.toUpperCase(), style: AppText.headerOverline),
-            const SizedBox(height: 6),
-          ],
-          Text(title, style: AppText.headerTitle),
-          if (subtitle != null) ...[
-            const SizedBox(height: 4),
-            Text(subtitle!, style: AppText.headerSubtitle),
-          ],
-          if (bottom != null) ...[
-            const SizedBox(height: 14),
-            bottom!,
-          ],
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (overline != null) ...[
+                      Text(
+                        overline!.toUpperCase(),
+                        style: AppText.headerOverline,
+                      ),
+                      const SizedBox(height: 6),
+                    ],
+                    Text(title, style: AppText.headerTitle),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 4),
+                      Text(subtitle!, style: AppText.headerSubtitle),
+                    ],
+                  ],
+                ),
+              ),
+              if (trailing != null) trailing!,
+            ],
+          ),
+          if (bottom != null) ...[const SizedBox(height: 14), bottom!],
         ],
       ),
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/product.dart';
+import '../state/auth_scope.dart';
 import '../state/inventory_scope.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
@@ -17,6 +18,34 @@ class HomeScreen extends StatelessWidget {
   /// Troca a aba da navegacao principal (0 Inicio, 1 Produtos, 2 Estoque Baixo).
   final ValueChanged<int> onNavigate;
 
+  Future<void> _confirmLogout(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surfaceBright,
+        title: const Text('Sair da conta'),
+        content: const Text(
+          'Deseja sair? Você precisará entrar novamente para acessar o estoque.',
+          style: TextStyle(fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Sair'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+    await AuthScope.read(context).logout();
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = InventoryScope.of(context);
@@ -31,6 +60,12 @@ class HomeScreen extends StatelessWidget {
             title: 'Início',
             subtitle: formatFullDate(DateTime.now()),
             bottomPadding: 20,
+            trailing: IconButton(
+              tooltip: 'Sair',
+              color: Colors.white,
+              icon: const Icon(Icons.logout),
+              onPressed: () => _confirmLogout(context),
+            ),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),

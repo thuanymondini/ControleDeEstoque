@@ -15,16 +15,20 @@ class StockException implements Exception {
 }
 
 /// Fonte unica de verdade do app: lista de produtos, historico de
-/// movimentacoes e as regras de entrada/saida de estoque.
+/// movimentacoes e as regras de entrada/saida de estoque do usuario logado.
 class InventoryController extends ChangeNotifier {
   InventoryController({InventoryRepository? repository})
       : _repository = repository ?? InventoryRepository();
 
   final InventoryRepository _repository;
 
+  /// E-mail da conta dona do estoque carregado.
+  String? _owner;
   List<Product> _products = [];
   List<StockMovement> _movements = [];
   bool _isLoading = true;
+
+  String? get owner => _owner;
 
   bool get isLoading => _isLoading;
 
@@ -51,15 +55,37 @@ class InventoryController extends ChangeNotifier {
     return set;
   }
 
-  Future<void> load() async {
+  /// Carrega o estoque de [owner], descartando o do usuario anterior.
+  Future<void> load(String owner, {bool withSampleData = false}) async {
+    _owner = owner;
+    _products = [];
+    _movements = [];
     _isLoading = true;
     notifyListeners();
 
-    _products = await _repository.loadProducts();
-    _movements = await _repository.loadMovements();
+    final products = await _repository.loadProducts(
+      owner,
+      withSampleData: withSampleData,
+    );
+    final movements = await _repository.loadMovements(owner);
+
+    // Outro usuario entrou (ou saiu) enquanto este estoque carregava.
+    if (_owner != owner) return;
+
+    _products = products;
+    _movements = movements;
     _sortMovements();
 
     _isLoading = false;
+    notifyListeners();
+  }
+
+  /// Esvazia o estoque em memoria ao sair da conta.
+  void clear() {
+    _owner = null;
+    _products = [];
+    _movements = [];
+    _isLoading = true;
     notifyListeners();
   }
 
@@ -106,7 +132,7 @@ class InventoryController extends ChangeNotifier {
     );
 
     _products = [..._products, product];
-    await _repository.saveProducts(_products);
+    await _repository.saveProducts(_owner!, _products);
     notifyListeners();
     return product;
   }
@@ -134,7 +160,7 @@ class InventoryController extends ChangeNotifier {
       for (final product in _products)
         if (product.id == id) updated else product,
     ];
-    await _repository.saveProducts(_products);
+    await _repository.saveProducts(_owner!, _products);
     notifyListeners();
     return updated;
   }
@@ -143,8 +169,8 @@ class InventoryController extends ChangeNotifier {
     _products = _products.where((product) => product.id != id).toList();
     _movements =
         _movements.where((movement) => movement.productId != id).toList();
-    await _repository.saveProducts(_products);
-    await _repository.saveMovements(_movements);
+    await _repository.saveProducts(_owner!, _products);
+    await _repository.saveMovements(_owner!, _movements);
     notifyListeners();
   }
 
@@ -218,8 +244,8 @@ class InventoryController extends ChangeNotifier {
       _movements = _movements.sublist(0, 100);
     }
 
-    await _repository.saveProducts(_products);
-    await _repository.saveMovements(_movements);
+    await _repository.saveProducts(_owner!, _products);
+    await _repository.saveMovements(_owner!, _movements);
     notifyListeners();
     return updated;
   }
